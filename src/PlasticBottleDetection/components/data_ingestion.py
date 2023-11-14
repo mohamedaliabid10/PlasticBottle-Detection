@@ -21,10 +21,6 @@ class DataIngestion:
             raise AppException(e, sys)
 
     def download_data(self) -> str:
-        """
-        Fetch data from the url
-        """
-
         try:
             dataset_url = self.data_ingestion_config.data_download_url
             zip_download_dir = self.data_ingestion_config.data_ingestion_dir
@@ -52,7 +48,7 @@ class DataIngestion:
         return [
             f
             for f in list_of_files
-            if f.endswith(".jpg") and f.endswith(".yaml") and f.endswith(".text")
+            if f.endswith(".jpg") or f.endswith(".yaml") or f.endswith(".txt")
         ]
 
     def _preprocess(self, zf: zipfile.ZipFile, f: str, working_dir: str):
