@@ -1,11 +1,14 @@
 import os
 import sys
 import zipfile
+from tqdm import tqdm
 import gdown
 from PlasticBottleDetection.logger import logging
 from PlasticBottleDetection.exception import AppException
 from PlasticBottleDetection.entity.config_entity import DataIngestionConfig
 from PlasticBottleDetection.entity.artifacts_entity import DataIngestionArtifact
+from PlasticBottleDetection.utils import get_size
+from pathlib import Path
 
 
 class DataIngestion:
@@ -45,17 +48,35 @@ class DataIngestion:
         except Exception as e:
             raise AppException(e, sys)
 
+    def _get_updated_list_of_files(self, list_of_files):
+        return [
+            f
+            for f in list_of_files
+            if f.endswith(".jpg") and f.endswith(".yaml") and f.endswith(".text")
+        ]
+
+    def _preprocess(self, zf: zipfile.ZipFile, f: str, working_dir: str):
+        target_filepath = os.path.join(working_dir, f)
+        if not os.path.exists(target_filepath):
+            zf.extract(f, working_dir)
+
+        if os.path.getsize(target_filepath) == 0:
+            logging.info(
+                f"removing file:{target_filepath} of size: {get_size(Path(target_filepath))}"
+            )
+            os.remove(target_filepath)
+
     def extract_zip_file(self, zip_file_path: str) -> str:
-        """
-        zip_file_path: str
-        Extracts the zip file into the data directory
-        Function returns None
-        """
         try:
             unzipped_data_path = self.data_ingestion_config.unzipped_data_file_path
             os.makedirs(unzipped_data_path, exist_ok=True)
             with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
-                zip_ref.extractall(unzipped_data_path)
+                list_of_files = zip_ref.namelist()
+                updated_list_of_files = self._get_updated_list_of_files(list_of_files)
+                for f in tqdm(updated_list_of_files):
+                    self._preprocess(
+                        zip_ref, f, self.data_ingestion_config.unzipped_data_file_path
+                    )
             logging.info(
                 f"Extracting zip file: {zip_file_path} into dir: {unzipped_data_path}"
             )
