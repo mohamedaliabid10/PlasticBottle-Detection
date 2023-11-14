@@ -2,7 +2,7 @@ import os.path
 import sys
 import yaml
 import base64
-
+from pathlib import Path
 from PlasticBottleDetection.exception import AppException
 from PlasticBottleDetection.logger import logging
 
@@ -31,6 +31,11 @@ def write_yaml_file(file_path: str, content: object, replace: bool = False) -> N
 
     except Exception as e:
         raise AppException(e, sys)
+
+
+def get_size(path: Path) -> str:
+    size_in_kb = round(os.path.getsize(path) / 1024)
+    return f"~ {size_in_kb} KB"
 
 
 def decodeImage(imgstring, fileName):
